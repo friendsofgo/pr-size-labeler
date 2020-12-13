@@ -2,6 +2,11 @@
 
 Sample GitHub Action written in Go to visualize and optionally limit the size of your pull requests.
 
+Developed for fun and learn. 
+Heavily inspired on [codelytv/pr-size-labeler](https://github.com/CodelyTV/pr-size-labeler).
+
+**All credits for the original authors&trade;**
+
 [![Status](https://github.com/friendsofgo/pr-size-labeler/workflows/labeler/badge.svg)](https://github.com/friendsofgo/pr-size-labeler)
 [![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/friendsofgo/pr-size-labeler)](https://golang.org/doc/go1.15)
 [![Version](https://img.shields.io/github/release/friendsofgo/pr-size-labeler.svg?style=flat-square)](https://github.com/friendsofgo/pr-size-labeler/releases/latest)
