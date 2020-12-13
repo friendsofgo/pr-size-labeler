@@ -1,5 +1,5 @@
 name: 'PRs Size Labeler'
-description: 'Sample GitHub Action to label a PR based on the amount of changes written in Go'
+description: 'Sample GitHub Action written in Go to visualize and optionally limit the size of your pull requests'
 inputs:
   github_token:
     description: 'GitHub token'
