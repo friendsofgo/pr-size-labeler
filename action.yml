@@ -1,0 +1,44 @@
+name: 'PRs Size Labeler'
+description: 'Sample GitHub Action to label a PR based on the amount of changes written in Go'
+inputs:
+  github_token:
+    description: 'GitHub token'
+    required: true
+  xs_max_size:
+    description: 'Max size for a PR to be considered XS'
+    required: false
+    default: '10'
+  s_max_size:
+    description: 'Max size for a PR to be considered S'
+    required: false
+    default: '100'
+  m_max_size:
+    description: 'Max size for a PR to be considered M'
+    required: false
+    default: '500'
+  l_max_size:
+    description: 'Max size for a PR to be considered L'
+    required: false
+    default: '1000'
+  fail_if_xl:
+    description: 'Fail if the PR size is XL'
+    required: false
+    default: 'false'
+  message_if_xl:
+    description: 'Comment added if the PR size is XL'
+    required: false
+    default: ''
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.GITHUB_TOKEN }}
+    - ${{ inputs.xs_max_size }}
+    - ${{ inputs.s_max_size }}
+    - ${{ inputs.m_max_size }}
+    - ${{ inputs.l_max_size }}
+    - ${{ inputs.fail_if_xl }}
+    - ${{ inputs.message_if_xl }}
+branding:
+  icon: 'tag'
+  color: 'green'
