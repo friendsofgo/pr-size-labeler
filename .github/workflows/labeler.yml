@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v1
       - uses: ./
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           xs_max_size: '10'
           s_max_size: '40'
           m_max_size: '85'
