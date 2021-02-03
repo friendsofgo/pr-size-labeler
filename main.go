@@ -10,37 +10,26 @@ import (
 	"github.com/posener/goaction/log"
 )
 
-const (
-	NoCIMessage          = "Not in GitHub Action mode, quitting..."
-	NoPRMessage          = "Not a pull request action, nothing to do here..."
-	MissingConfigMessage = "Required configuration is missing: %s"
-	EventErrorMessage    = "Error happened while getting event info: %s"
-	LabelErrorMessage    = "Error happened while adding label: %s"
-	CommentErrorMessage  = "Error happened while adding comment: %s"
-	SizeErrorMessage     = "PR size is XL, make it shorter, please!"
-	SuccessMessage       = "Pull request successfully labeled"
-)
-
 func main() {
 	if !goaction.CI {
-		log.Warnf(NoCIMessage)
+		log.Warnf("Not in GitHub Action mode, quitting...")
 		return
 	}
 
 	if goaction.Event != goaction.EventPullRequest {
-		log.Debugf(NoPRMessage)
+		log.Debugf("Not a pull request action, nothing to do here...")
 		return
 	}
 
 	var config Config
 	err := envconfig.Process("input", &config)
 	if err != nil {
-		log.Fatalf(MissingConfigMessage, err)
+		log.Fatalf("Required configuration is missing: %s", err)
 	}
 
 	event, err := goaction.GetPullRequest()
 	if err != nil {
-		log.Fatalf(EventErrorMessage, err)
+		log.Fatalf("Error happened while getting event info: %s", err)
 	}
 
 	prSize := GetPrSize(config, event.PullRequest)
@@ -50,11 +39,11 @@ func main() {
 
 	_, _, err = gh.IssuesAddLabelsToIssue(ctx, goaction.PrNum(), []string{string(prSize)})
 	if err != nil {
-		log.Fatalf(LabelErrorMessage, err)
+		log.Fatalf("Error happened while adding label: %s", err)
 	}
 
 	if prSize != XL {
-		log.Debugf(SuccessMessage)
+		log.Debugf("Pull request successfully labeled")
 		return
 	}
 
@@ -63,14 +52,14 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatalf(CommentErrorMessage, err)
+		log.Fatalf("Error happened while adding comment: %s", err)
 	}
 
 	if config.FailIfXL {
-		log.Fatalf(SizeErrorMessage)
+		log.Fatalf("PR size is XL, make it shorter, please!")
 	}
 
-	log.Debugf(SuccessMessage)
+	log.Debugf("Pull request successfully labeled")
 }
 
 func GetPrSize(config Config, pr *github.PullRequest) PrSize {
