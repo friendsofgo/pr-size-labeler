@@ -37,6 +37,7 @@ jobs:
           l_max_size: '1000'
           fail_if_xl: 'false'
           message_if_xl: 'This PR is so big! Please, split it 😊'
+          files_to_ignore: 'go.mod *.js'
 ```
 
 > If you want, you can customize all `*_max_size` with the size that fits in your project.

@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"strings"
 
 	"github.com/google/go-github/v31/github"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/posener/goaction"
 	"github.com/posener/goaction/actionutil"
 	"github.com/posener/goaction/log"
+	"golang.org/x/oauth2"
 )
 
 func main() {
@@ -27,14 +29,28 @@ func main() {
 		log.Fatalf("Required configuration is missing: %s", err)
 	}
 
+	ctx := context.Background()
+
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: config.GitHubToken},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	client := github.NewClient(tc)
+
 	event, err := goaction.GetPullRequest()
 	if err != nil {
 		log.Fatalf("Error happened while getting event info: %s", err)
 	}
 
-	prSize := GetPrSize(config, event.PullRequest)
+	filesToIgnore := strings.Fields(config.FilesToIgnore)
 
-	ctx := context.Background()
+	files, _, err := client.PullRequests.ListFiles(ctx, *event.Repo.Owner.Name, *event.Repo.Name, *event.PullRequest.Number, nil)
+	if err != nil {
+		log.Fatalf("Error happened while getting files info: %s", err)
+	}
+
+	prSize := GetPrSize(config, files, filesToIgnore)
+
 	gh := actionutil.NewClientWithToken(ctx, config.GitHubToken)
 
 	_, _, err = gh.IssuesAddLabelsToIssue(ctx, goaction.PrNum(), []string{string(prSize)})
@@ -62,8 +78,18 @@ func main() {
 	log.Debugf("Pull request successfully labeled")
 }
 
-func GetPrSize(config Config, pr *github.PullRequest) PrSize {
-	totalModifications := pr.GetAdditions() + pr.GetDeletions()
+func GetPrSize(config Config, files []*github.CommitFile, filesToIgnore []string) PrSize {
+	var totalModifications int
+
+	checkIgnorableFiles := len(filesToIgnore) > 0
+
+	for _, file := range files {
+		if checkIgnorableFiles && isIgnorable(file.GetFilename(), filesToIgnore) {
+			continue
+		}
+
+		totalModifications += file.GetChanges()
+	}
 
 	switch {
 	case totalModifications < config.XsMaxSize:
@@ -79,6 +105,22 @@ func GetPrSize(config Config, pr *github.PullRequest) PrSize {
 	}
 }
 
+func isIgnorable(filename string, filesToIgnore []string) bool {
+	for _, fti := range filesToIgnore {
+		if strings.Contains(fti, "*") {
+			ext := strings.Split(fti, "*")[1]
+			if strings.Contains(filename, ext) {
+				return true
+			}
+		}
+		if fti == filename {
+			return true
+		}
+	}
+
+	return false
+}
+
 type PrSize string
 
 const (
@@ -91,11 +133,12 @@ const (
 
 // Config is the data structure used to define the action settings.
 type Config struct {
-	GitHubToken string `envconfig:"GITHUB_TOKEN" required:"true"`
-	XsMaxSize   int    `envconfig:"XS_MAX_SIZE" default:"10"`
-	SMaxSize    int    `envconfig:"S_MAX_SIZE" default:"100"`
-	MMaxSize    int    `envconfig:"M_MAX_SIZE" default:"500"`
-	LMaxSize    int    `envconfig:"L_MAX_SIZE" default:"1000"`
-	FailIfXL    bool   `envconfig:"FAIL_IF_XL" default:"false"`
-	MessageIfXL string `envconfig:"MESSAGE_IF_XL" default:""`
+	GitHubToken   string `envconfig:"GITHUB_TOKEN" required:"true"`
+	XsMaxSize     int    `envconfig:"XS_MAX_SIZE" default:"10"`
+	SMaxSize      int    `envconfig:"S_MAX_SIZE" default:"100"`
+	MMaxSize      int    `envconfig:"M_MAX_SIZE" default:"500"`
+	LMaxSize      int    `envconfig:"L_MAX_SIZE" default:"1000"`
+	FailIfXL      bool   `envconfig:"FAIL_IF_XL" default:"false"`
+	MessageIfXL   string `envconfig:"MESSAGE_IF_XL" default:""`
+	FilesToIgnore string `envconfig:"FILES_TO_IGNORE" default:""`
 }
